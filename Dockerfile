@@ -43,6 +43,12 @@ pip install -r requirements.txt
 
 # Scripts & config
 COPY scripts ${SCRIPTS_DIR}
+# Normalize line endings in case files were edited on Windows
+RUN sed -i 's/\r$//' ${SCRIPTS_DIR}/*.sh
+
+ENTRYPOINT ["/usr/bin/tini","--"]
+CMD ["bash","/opt/scripts/bootstrap.sh"]
+
 RUN chmod +x ${SCRIPTS_DIR}/*.sh
 
 
