@@ -10,22 +10,41 @@ ENV DEBIAN_FRONTEND=noninteractive \
     TINI_SUBREAPER=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git wget curl aria2 ffmpeg tini ca-certificates \
-    libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 jq \
+    git wget curl aria2 ffmpeg tini ca-certificates jq \
+    libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 \
+    libsndfile1 openssh-server \
   && rm -rf /var/lib/apt/lists/*
 
 RUN python -m pip install --upgrade pip setuptools wheel && \
-    pip install --no-deps --upgrade \
+    pip install --upgrade --extra-index-url https://download.pytorch.org/whl/cu126 \
+      torch==2.6.0+cu126 \
+      torchaudio==2.6.0+cu126 && \
+    pip install --upgrade \
       huggingface_hub==0.25.2 \
       hf-transfer==0.1.6 \
       xformers==0.0.29.post2 \
-      soundfile==0.12.1 \
-      librosa==0.10.2.post1 \
       einops==0.8.0 \
       opencv-python-headless==4.10.0.84 \
+      soundfile==0.12.1 \
+      librosa==0.10.2.post1 \
+      audioread \
+      joblib>=1.3 \
+      msgpack>=1.0 \
+      pooch>=1.8 \
+      scikit-learn>=1.3 \
+      soxr>=0.3.2 \
       ChatTTS==0.2.4 \
+      vocos==0.1.0 \
+      pybase16384 \
+      vector-quantize-pytorch \
+      numba==0.62.1 \
+      llvmlite==0.45.1 \
       TTS==0.22.0 \
-      fastapi uvicorn
+      sentencepiece \
+      safetensors \
+      "git+https://github.com/huggingface/parler-tts.git" \
+      fastapi \
+      uvicorn
 
 # ComfyUI pinned tag
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_DIR} && \

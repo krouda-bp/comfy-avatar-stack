@@ -27,5 +27,11 @@ if [[ "$PRELOAD_HY_AVATAR" == "1" ]]; then
   bash /opt/scripts/preload_models.sh || true
 fi
 
+# Ensure sshd is running for direct shell access (RunPod, etc.)
+if command -v sshd >/dev/null 2>&1; then
+  mkdir -p /run/sshd
+  /usr/sbin/sshd -D -e &
+fi
+
 # Start ComfyUI (listen on 0.0.0.0:PORT)
 exec bash /opt/scripts/start_comfy.sh "$PORT"
