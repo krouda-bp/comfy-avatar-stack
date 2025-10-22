@@ -79,14 +79,16 @@ The container uses `/workspace` (configurable via `VOLUME_ROOT`) for persistent 
 
 ## Custom Nodes Included
 
-All custom nodes are pinned to stable versions for reproducibility:
+Custom nodes are installed at their latest stable versions (HEAD):
 
-1. **ComfyUI-Manager** (v2.52.4) - Package manager for nodes
+1. **ComfyUI-Manager** - Package manager for nodes (uses latest tagged release)
 2. **ComfyUI-VideoHelperSuite** - Video manipulation utilities
 3. **ComfyUI-LivePortraitKJ** - Long-form talking head animation
 4. **ComfyUI-HunyuanVideo-Avatar** - Advanced multi-character dialog
 5. **ComfyUI-HunyuanVideoWrapper** - Text-to-video variants
 6. **ComfyUI-ParlerTTS** - Promptable TTS node
+
+**Note:** For production environments requiring version pinning, modify `scripts/install_nodes.sh` to checkout specific commits or tags after cloning.
 
 ## Command-Line TTS Tools
 
