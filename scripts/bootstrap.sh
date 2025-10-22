@@ -24,13 +24,10 @@ YAML
 : "${HF_HUB_ENABLE_HF_TRANSFER:=1}"
 : "${PRELOAD_HY_AVATAR:=0}"
 if [[ "$PRELOAD_HY_AVATAR" == "1" ]]; then
-  bash /opt/scripts/preload_models.sh || true
-fi
-
-# Ensure sshd is running for direct shell access (RunPod, etc.)
-if command -v sshd >/dev/null 2>&1; then
-  mkdir -p /run/sshd
-  /usr/sbin/sshd -D -e &
+  echo "Preloading models..."
+  if ! bash /opt/scripts/preload_models.sh; then
+    echo "WARNING: Model preload failed, continuing anyway (models will download on first use)"
+  fi
 fi
 
 # Start ComfyUI (listen on 0.0.0.0:PORT)

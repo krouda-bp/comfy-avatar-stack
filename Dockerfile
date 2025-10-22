@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git wget curl aria2 ffmpeg tini ca-certificates jq \
     libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 \
-    libsndfile1 openssh-server \
+    libsndfile1 \
   && rm -rf /var/lib/apt/lists/*
 
 RUN python -m pip install --upgrade pip setuptools wheel && \
@@ -27,45 +27,42 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
       opencv-python-headless==4.10.0.84 \
       soundfile==0.12.1 \
       librosa==0.10.2.post1 \
-      audioread \
-      joblib>=1.3 \
-      msgpack>=1.0 \
-      pooch>=1.8 \
-      scikit-learn>=1.3 \
-      soxr>=0.3.2 \
+      audioread==3.0.1 \
+      joblib==1.4.2 \
+      msgpack==1.1.0 \
+      pooch==1.8.2 \
+      scikit-learn==1.6.0 \
+      soxr==0.5.0.post1 \
       ChatTTS==0.2.4 \
       vocos==0.1.0 \
-      pybase16384 \
-      vector-quantize-pytorch \
+      pybase16384==0.1.7 \
+      vector-quantize-pytorch==1.18.7 \
       numba==0.62.1 \
       llvmlite==0.45.1 \
       TTS==0.22.0 \
-      sentencepiece \
-      safetensors \
-      "git+https://github.com/huggingface/parler-tts.git" \
-      fastapi \
-      uvicorn
+      sentencepiece==0.2.0 \
+      safetensors==0.5.1 \
+      "git+https://github.com/huggingface/parler-tts.git@cb208f64063238fd6aa8ac8bdc06ce1a8e64d4f3"
 
-# ComfyUI pinned tag
+# ComfyUI - pinned to commit 51696e3 (v0.3.8, 2024-12-12)
+# This version is stable and tested with the custom nodes below
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_DIR} && \
     cd ${COMFYUI_DIR} && git checkout 51696e3 && \
     pip install -r requirements.txt
-
-# Custom nodes (BAKED IN; no runtime cloning)
-RUN set -eux; cd ${COMFYUI_DIR}/custom_nodes; \
-    git clone https://github.com/Comfy-Org/ComfyUI-Manager.git && \
-    git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git && \
-    git clone https://github.com/kijai/ComfyUI-LivePortraitKJ.git && \
-    pip install -r ComfyUI-LivePortraitKJ/requirements.txt || true
 
 # Scripts & config
 COPY scripts ${SCRIPTS_DIR}
 # Normalize Windows line-endings + make executable
 RUN sed -i 's/\r$//' ${SCRIPTS_DIR}/*.sh && chmod +x ${SCRIPTS_DIR}/*.sh
 
-# Small CLI for TTS via ChatTTS (no Parler node needed for first run)
-COPY scripts/tts.py /opt/scripts/tts.py
+# Install custom nodes (baked into image for faster startup)
+RUN bash ${SCRIPTS_DIR}/install_nodes.sh
 
 EXPOSE 8188
+
+# Health check to ensure ComfyUI is responding
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8188/ || exit 1
+
 ENTRYPOINT ["/usr/bin/tini","-s","--"]
 CMD ["bash","/opt/scripts/bootstrap.sh"]

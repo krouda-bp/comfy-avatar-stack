@@ -4,6 +4,7 @@ Lightweight Parler-TTS CLI for generating speech when ChatTTS is unavailable.
 """
 import argparse
 import os
+import sys
 
 import soundfile as sf
 import torch
@@ -32,17 +33,37 @@ def main():
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = ParlerTTSForConditionalGeneration.from_pretrained(args.model).to(device)
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    if device == "cpu":
+        print("WARNING: CUDA not available, running on CPU (will be slow)")
+    else:
+        print(f"Using device: {device}")
 
-    desc_ids = tokenizer(args.desc, return_tensors="pt").input_ids.to(device)
-    prompt_ids = tokenizer(args.text, return_tensors="pt").input_ids.to(device)
-    wav = model.generate(input_ids=desc_ids, prompt_input_ids=prompt_ids)
+    try:
+        print(f"Loading Parler-TTS model from {args.model}...")
+        model = ParlerTTSForConditionalGeneration.from_pretrained(args.model).to(device)
+        tokenizer = AutoTokenizer.from_pretrained(args.model)
+        print("Model loaded successfully")
+    except Exception as e:
+        print(f"ERROR: Failed to load model: {e}", file=sys.stderr)
+        sys.exit(1)
 
-    audio = wav.cpu().numpy().squeeze()
-    os.makedirs(os.path.dirname(args.out), exist_ok=True)
-    sf.write(args.out, audio, model.config.sampling_rate)
-    print(f"Wrote {args.out}")
+    try:
+        print("Generating speech...")
+        desc_ids = tokenizer(args.desc, return_tensors="pt").input_ids.to(device)
+        prompt_ids = tokenizer(args.text, return_tensors="pt").input_ids.to(device)
+        wav = model.generate(input_ids=desc_ids, prompt_input_ids=prompt_ids)
+    except Exception as e:
+        print(f"ERROR: Speech generation failed: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        audio = wav.cpu().numpy().squeeze()
+        os.makedirs(os.path.dirname(args.out), exist_ok=True)
+        sf.write(args.out, audio, model.config.sampling_rate)
+        print(f"Successfully wrote {args.out}")
+    except Exception as e:
+        print(f"ERROR: Failed to write audio file: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
